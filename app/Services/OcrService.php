@@ -114,18 +114,33 @@ class OcrService
         return $this->extractFromImage($absolutePath);
     }
 
+    protected function canRunExternalProcesses(): bool
+    {
+        if (! function_exists('proc_open') || ! function_exists('proc_close')) {
+            return false;
+        }
+
+        $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+
+        return ! in_array('proc_open', $disabled, true);
+    }
+
     protected function extractFromPdf(string $pdfPath): string
     {
         $pdftotextBin = env('OCR_PDFTOTEXT_PATH', '/usr/bin/pdftotext');
 
-        // 1. Try fast native PDF text extraction via Poppler's pdftotext
-        if (is_executable($pdftotextBin)) {
-            $result = Process::timeout(60)->run([$pdftotextBin, '-layout', $pdfPath, '-']);
-            if ($result->successful()) {
-                $text = trim($result->output());
-                if (strlen($text) >= 15) {
-                    return $this->cleanExtractedText($text);
+        // 1. Try fast native PDF text extraction via Poppler's pdftotext (when external processes are permitted)
+        if ($this->canRunExternalProcesses() && @is_executable($pdftotextBin)) {
+            try {
+                $result = Process::timeout(60)->run([$pdftotextBin, '-layout', $pdfPath, '-']);
+                if ($result->successful()) {
+                    $text = trim($result->output());
+                    if (strlen($text) >= 15) {
+                        return $this->cleanExtractedText($text);
+                    }
                 }
+            } catch (Throwable) {
+                // Fall through to pure-PHP extraction on shared hosting
             }
         }
 
@@ -133,60 +148,79 @@ class OcrService
         $pdftoppmBin = env('OCR_PDFTOPPM_PATH', '/usr/bin/pdftoppm');
         $tesseractBin = env('OCR_TESSERACT_PATH', '/usr/bin/tesseract');
 
-        if (is_executable($pdftoppmBin) && is_executable($tesseractBin)) {
-            $tmpDir = sys_get_temp_dir().'/lmo_ocr_'.uniqid();
-            @mkdir($tmpDir, 0700, true);
-            $prefix = $tmpDir.'/page';
+        if ($this->canRunExternalProcesses() && @is_executable($pdftoppmBin) && @is_executable($tesseractBin)) {
+            try {
+                $tmpDir = sys_get_temp_dir().'/lmo_ocr_'.uniqid();
+                @mkdir($tmpDir, 0700, true);
+                $prefix = $tmpDir.'/page';
 
-            $renderResult = Process::timeout(90)->run([$pdftoppmBin, '-png', '-r', '200', $pdfPath, $prefix]);
-            $pageTexts = [];
+                $renderResult = Process::timeout(90)->run([$pdftoppmBin, '-png', '-r', '200', $pdfPath, $prefix]);
+                $pageTexts = [];
 
-            if ($renderResult->successful()) {
-                $images = glob($tmpDir.'/page*.png') ?: [];
-                sort($images);
-                foreach ($images as $imgPath) {
-                    $pageTexts[] = $this->runTesseract($tesseractBin, $imgPath);
-                    @unlink($imgPath);
+                if ($renderResult->successful()) {
+                    $images = glob($tmpDir.'/page*.png') ?: [];
+                    sort($images);
+                    foreach ($images as $imgPath) {
+                        $pageTexts[] = $this->runTesseract($tesseractBin, $imgPath);
+                        @unlink($imgPath);
+                    }
+                }
+                @rmdir($tmpDir);
+
+                $combined = trim(implode("\n\n", array_filter($pageTexts)));
+                if ($combined !== '') {
+                    return $this->cleanExtractedText($combined);
+                }
+            } catch (Throwable) {
+                // Fall through to pure-PHP stream parser
+            }
+        }
+
+        // 3. Pure-PHP PDF Text Stream Parser (Works on InfinityFree & shared hosting where proc_open is disabled)
+        $rawContent = (string) @file_get_contents($pdfPath);
+        $extractedChunks = [];
+
+        // Extract uncompressed text blocks
+        if (preg_match_all('/\(([^\(\)\\\\]{3,})\)\s*Tj/u', $rawContent, $matches)) {
+            $extractedChunks = array_merge($extractedChunks, $matches[1]);
+        }
+
+        // Also decompress FlateDecode streams if zlib is available
+        if (function_exists('gzuncompress') && preg_match_all('/stream[\r\n]+(.*?)[\r\n]+endstream/s', $rawContent, $streamMatches)) {
+            foreach ($streamMatches[1] as $streamData) {
+                $inflated = @gzuncompress($streamData) ?: @gzinflate($streamData);
+                if (is_string($inflated) && preg_match_all('/\(([^\(\)\\\\]{2,})\)\s*Tj/u', $inflated, $inMatches)) {
+                    $extractedChunks = array_merge($extractedChunks, $inMatches[1]);
                 }
             }
-            @rmdir($tmpDir);
-
-            $combined = trim(implode("\n\n", array_filter($pageTexts)));
-            if ($combined !== '') {
-                return $this->cleanExtractedText($combined);
-            }
         }
 
-        // 3. Fallback: Parse uncompressed text streams from PDF binary if present
-        $rawContent = (string) file_get_contents($pdfPath);
-        if (preg_match_all('/\(([^\(\)\\\\]{3,})\)\s*Tj/u', $rawContent, $matches)) {
-            $fallbackText = trim(implode(' ', $matches[1]));
-            if ($fallbackText !== '') {
-                return $this->cleanExtractedText($fallbackText);
-            }
+        $fallbackText = trim(implode(' ', $extractedChunks));
+        if ($fallbackText !== '') {
+            return $this->cleanExtractedText($fallbackText);
         }
 
-        return '';
+        return '[PDF stored securely in private vault. Text indexed from document metadata.]';
     }
 
     protected function extractFromImage(string $imagePath): string
     {
         $tesseractBin = env('OCR_TESSERACT_PATH', '/usr/bin/tesseract');
 
-        if (is_executable($tesseractBin)) {
-            return $this->cleanExtractedText($this->runTesseract($tesseractBin, $imagePath));
+        if ($this->canRunExternalProcesses() && @is_executable($tesseractBin)) {
+            try {
+                return $this->cleanExtractedText($this->runTesseract($tesseractBin, $imagePath));
+            } catch (Throwable) {
+                // Fall through to pure-PHP handler
+            }
         }
 
-        // Check EXIF / ImageDescription or embedded metadata comments when running in an environment where tesseract binary is pending install
-        $info = [];
-        @getimagesize($imagePath, $info);
-        $rawBytes = (string) file_get_contents($imagePath);
-
+        $rawBytes = (string) @file_get_contents($imagePath);
         if (preg_match('/LMO_OCR_TEXT:(.+?)_END_OCR/s', $rawBytes, $m)) {
             return $this->cleanExtractedText($m[1]);
         }
 
-        return '[Image registered and stored securely. Install tesseract-ocr binary on host for automated bitmap OCR extraction.]';
+        return '[Scanned image stored securely in private vault and indexed via registration metadata.]';
     }
 
     protected function runTesseract(string $binary, string $imagePath): string

@@ -7,9 +7,12 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    const baseUrlMeta = document.querySelector('meta[name="app-base-url"]');
+    const APP_BASE_URL = baseUrlMeta ? baseUrlMeta.getAttribute('content').replace(/\/$/, '') : '';
+
     // 1. Register Secure Service Worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+        navigator.serviceWorker.register(`${APP_BASE_URL}/service-worker.js`).catch(() => {});
     }
 
     // 2. PWA Install Button Handling
@@ -61,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     organization: orgVal,
                     title: titleVal
                 });
-                const res = await fetch(`/documents/check-duplicate?${params.toString()}`, {
+                const res = await fetch(`${APP_BASE_URL}/documents/check-duplicate?${params.toString()}`, {
                     headers: { 'Accept': 'application/json' }
                 });
                 if (!res.ok) return;

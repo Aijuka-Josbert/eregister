@@ -1,0 +1,34 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # 1. Block direct browser access to sensitive files and directories
+    RewriteRule ^(\.env|\.git|composer\.(json|lock)|package\.json|phpunit\.xml|artisan|AGENTS\.md|CLAUDE\.md|README\.md|PROJECT_PROGRESS\.md) - [F,L,NC]
+    RewriteRule ^(app|bootstrap|config|database|docs|resources|routes|storage|tests|vendor)(/.*)?$ - [F,L,NC]
+
+    # 2. Pass Authorization & XSRF headers through to PHP
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # 3. Serve static assets directly from public/ if they exist there (e.g. css/, js/, images/, manifest.json, service-worker.js)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{DOCUMENT_ROOT}/register/public/$1 -f
+    RewriteRule ^(.+)$ public/$1 [L]
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+    RewriteRule ^(.+)$ public/$1 [L]
+
+    # 4. Route all other requests to the front controller index.php
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>

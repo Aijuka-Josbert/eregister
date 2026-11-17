@@ -4,13 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="app-base-url" content="{{ rtrim(url('/'), '/') }}">
     <meta name="theme-color" content="#142B4A">
     <title>@yield('title', 'LMO Digital Records Management System')</title>
-    <link rel="manifest" href="/manifest.json">
-    <link rel="icon" type="image/svg+xml" href="/images/lmo-icon.svg">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/lmo-icon.svg') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="/css/civic-institutional.css" rel="stylesheet">
+    <link href="{{ asset('css/civic-institutional.css') }}" rel="stylesheet">
 </head>
 <body>
     <div class="lmo-top-accent"></div>
@@ -258,7 +259,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/drms-app.js"></script>
+    <script src="{{ asset('js/drms-app.js') }}"></script>
     @stack('scripts')
 </body>
 </html>
