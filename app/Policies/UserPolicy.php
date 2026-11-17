@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Policies;
+
+use App\Models\User;
+
+class UserPolicy
+{
+    public function viewAny(User $user): bool
+    {
+        return $user->is_active && ($user->hasPermission('users.manage') || $user->hasRole('records_manager'));
+    }
+
+    public function create(User $user): bool
+    {
+        return $user->is_active && $user->hasPermission('users.manage');
+    }
+
+    public function update(User $user, User $target): bool
+    {
+        return $user->is_active && $user->hasPermission('users.manage');
+    }
+
+    public function toggleActive(User $user, User $target): bool
+    {
+        // Prevent self-deactivation
+        if ($user->id === $target->id) {
+            return false;
+        }
+
+        return $user->is_active && $user->hasPermission('users.manage');
+    }
+}

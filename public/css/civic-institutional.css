@@ -1,0 +1,244 @@
+:root {
+    --lmo-deep-navy: #142B4A;
+    --lmo-civic-blue: #245B91;
+    --lmo-light-blue: #EAF2FA;
+    --lmo-white: #FFFFFF;
+    --lmo-soft-bg: #F5F7FA;
+    --lmo-dark-text: #263445;
+    --lmo-muted-text: #718096;
+    --lmo-gold-accent: #C5A15B;
+    --lmo-success: #21865B;
+    --lmo-warning: #D99A2B;
+    --lmo-danger: #C74646;
+    --lmo-info: #3283B8;
+    --lmo-border: #E2E8F0;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--lmo-soft-bg);
+    color: var(--lmo-dark-text);
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+/* Institutional Top Gold Accent Bar */
+.lmo-top-accent {
+    height: 3px;
+    background-color: var(--lmo-gold-accent);
+    width: 100%;
+}
+
+/* Sidebar Navigation */
+.lmo-sidebar {
+    width: 265px;
+    background-color: var(--lmo-deep-navy);
+    color: var(--lmo-white);
+    min-height: 100vh;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.lmo-sidebar-brand {
+    padding: 1.15rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lmo-brand-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background-color: var(--lmo-civic-blue);
+    border: 1.5px solid var(--lmo-gold-accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--lmo-white);
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.lmo-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+    margin: 0.15rem 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    border-radius: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    border-left: 3px solid transparent;
+}
+
+.lmo-nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--lmo-white);
+}
+
+.lmo-nav-link.active {
+    background-color: var(--lmo-civic-blue);
+    color: var(--lmo-white);
+    border-left-color: var(--lmo-gold-accent);
+    font-weight: 600;
+}
+
+.lmo-nav-section {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--lmo-gold-accent);
+    padding: 1rem 1.25rem 0.35rem;
+    font-weight: 600;
+}
+
+/* Header & Search Bar */
+.lmo-topbar {
+    background-color: var(--lmo-white);
+    border-bottom: 1px solid var(--lmo-border);
+    padding: 0.65rem 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+/* Cards & Panels */
+.lmo-card {
+    background-color: var(--lmo-white);
+    border: 1px solid var(--lmo-border);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px rgba(20, 43, 74, 0.04);
+}
+
+.lmo-card-header {
+    background-color: var(--lmo-white);
+    border-bottom: 1px solid var(--lmo-border);
+    padding: 0.9rem 1.25rem;
+    font-weight: 600;
+    color: var(--lmo-deep-navy);
+}
+
+.lmo-stat-card {
+    background-color: var(--lmo-white);
+    border: 1px solid var(--lmo-border);
+    border-top: 3px solid var(--lmo-civic-blue);
+    border-radius: 0.5rem;
+    padding: 1.1rem 1.25rem;
+    box-shadow: 0 1px 2px rgba(20, 43, 74, 0.04);
+}
+
+.lmo-stat-card.accent-gold {
+    border-top-color: var(--lmo-gold-accent);
+}
+.lmo-stat-card.accent-success {
+    border-top-color: var(--lmo-success);
+}
+.lmo-stat-card.accent-warning {
+    border-top-color: var(--lmo-warning);
+}
+.lmo-stat-card.accent-danger {
+    border-top-color: var(--lmo-danger);
+}
+
+/* Buttons */
+.btn-lmo-primary {
+    background-color: var(--lmo-civic-blue);
+    border-color: var(--lmo-civic-blue);
+    color: var(--lmo-white);
+    font-weight: 500;
+}
+
+.btn-lmo-primary:hover,
+.btn-lmo-primary:focus {
+    background-color: var(--lmo-deep-navy);
+    border-color: var(--lmo-deep-navy);
+    color: var(--lmo-white);
+}
+
+.btn-lmo-navy {
+    background-color: var(--lmo-deep-navy);
+    border-color: var(--lmo-deep-navy);
+    color: var(--lmo-white);
+    font-weight: 500;
+}
+
+.btn-lmo-navy:hover {
+    background-color: #0e1e34;
+    color: var(--lmo-white);
+}
+
+/* Reference & Classification Badges */
+.lmo-ref-badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8rem;
+    background-color: var(--lmo-light-blue);
+    color: var(--lmo-deep-navy);
+    border: 1px solid rgba(36, 91, 145, 0.25);
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+}
+
+.lmo-official-ref {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8rem;
+    background-color: #FDFBF5;
+    color: var(--lmo-deep-navy);
+    border: 1px solid var(--lmo-gold-accent);
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+}
+
+/* Search Highlighting */
+mark.lmo-highlight {
+    background-color: #FFF3CD;
+    color: var(--lmo-deep-navy);
+    border-bottom: 2px solid var(--lmo-gold-accent);
+    padding: 0 0.15rem;
+    font-weight: 600;
+}
+
+/* Upload Dropzone & Mobile Scanner */
+.lmo-dropzone {
+    border: 2px dashed var(--lmo-civic-blue);
+    background-color: var(--lmo-light-blue);
+    border-radius: 0.5rem;
+    padding: 1.75rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.lmo-dropzone:hover,
+.lmo-dropzone.dragover {
+    background-color: #d8e7f6;
+}
+
+/* Tables */
+.table-lmo th {
+    background-color: #F8FAFC;
+    color: var(--lmo-deep-navy);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    border-bottom: 2px solid var(--lmo-border);
+}
+
+.table-lmo td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+}
+
+/* Mobile Responsive Bottom Bar */
+@media (max-width: 991.98px) {
+    .lmo-sidebar {
+        display: none;
+    }
+    .lmo-topbar {
+        padding: 0.65rem 1rem;
+    }
+}
