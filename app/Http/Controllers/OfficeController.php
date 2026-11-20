@@ -7,7 +7,6 @@ use App\Models\Office;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class OfficeController extends Controller
 {
@@ -15,14 +14,9 @@ class OfficeController extends Controller
         protected AuditService $auditService
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): RedirectResponse
     {
-        $offices = Office::with(['departments'])
-            ->withCount(['users', 'documents'])
-            ->orderBy('name')
-            ->get();
-
-        return view('offices.index', compact('offices'));
+        return redirect()->route('categories.index', ['tab' => 'offices']);
     }
 
     public function storeOffice(Request $request): RedirectResponse
@@ -55,7 +49,9 @@ class OfficeController extends Controller
             $request->user()
         );
 
-        return back()->with('success', "Office {$office->name} ({$office->code}) created.");
+        return redirect()
+            ->route('categories.index', ['tab' => 'offices'])
+            ->with('success', "Office {$office->name} ({$office->code}) created.");
     }
 
     public function storeDepartment(Request $request): RedirectResponse
@@ -88,6 +84,8 @@ class OfficeController extends Controller
             $request->user()
         );
 
-        return back()->with('success', "Department {$dept->name} created.");
+        return redirect()
+            ->route('categories.index', ['tab' => 'offices'])
+            ->with('success', "Department {$dept->name} created.");
     }
 }

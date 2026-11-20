@@ -6,7 +6,7 @@
  * - NEVER caches authenticated HTML pages, API responses, or private document previews/downloads.
  */
 
-const CACHE_NAME = 'lmo-drms-static-v2';
+const CACHE_NAME = 'lmo-drms-static-v3';
 const STATIC_ASSET_SUFFIXES = [
     '/css/civic-institutional.css',
     '/js/drms-app.js',

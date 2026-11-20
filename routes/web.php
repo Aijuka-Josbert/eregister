@@ -1,5 +1,4 @@
 <?php
-
 use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\AuthController;
@@ -37,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
     Route::get('/documents/{document}/edit', [DocumentController::class, 'edit'])->name('documents.edit');
     Route::put('/documents/{document}', [DocumentController::class, 'update'])->name('documents.update');
+    Route::patch('/documents/{document}/status', [DocumentController::class, 'updateStatus'])->name('documents.status');
     Route::post('/documents/{document}/retry-ocr', [DocumentController::class, 'retryOcr'])->name('documents.retry-ocr');
     Route::post('/documents/{document}/assign', [DocumentController::class, 'assign'])->name('documents.assign');
 

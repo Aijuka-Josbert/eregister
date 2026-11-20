@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DocumentCategory;
+use App\Models\Office;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,9 +18,25 @@ class CategoryController extends Controller
 
     public function index(Request $request): View
     {
-        $categories = DocumentCategory::withCount('documents')->orderBy('name')->get();
+        $user = $request->user();
 
-        return view('categories.index', compact('categories'));
+        $categories = DocumentCategory::query()
+            ->withCount(['documents' => fn ($q) => $q->visibleTo($user)])
+            ->orderBy('name')
+            ->get();
+
+        $offices = Office::query()
+            ->with(['departments' => fn ($q) => $q->withCount(['documents' => fn ($dq) => $dq->visibleTo($user)])->orderBy('name')])
+            ->withCount([
+                'users',
+                'documents' => fn ($q) => $q->visibleTo($user),
+            ])
+            ->orderBy('name')
+            ->get();
+
+        $activeTab = $request->query('tab') === 'offices' ? 'offices' : 'categories';
+
+        return view('categories.index', compact('categories', 'offices', 'activeTab'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -54,6 +71,8 @@ class CategoryController extends Controller
             $request->user()
         );
 
-        return back()->with('success', "Category '{$category->name}' created.");
+        return redirect()
+            ->route('categories.index', ['tab' => 'categories'])
+            ->with('success', "Category '{$category->name}' created.");
     }
 }

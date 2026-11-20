@@ -3,86 +3,66 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
-use App\Models\DocumentActivityLog;
 use App\Models\DocumentCategory;
-use App\Models\Office;
 use App\Models\User;
+use App\Services\AccountabilityAnalyticsService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        protected AccountabilityAnalyticsService $analytics
+    ) {}
+
     public function index(Request $request): View
     {
         /** @var User $user */
         $user = $request->user();
 
         $baseQuery = Document::query()->visibleTo($user);
+        $activeQuery = (clone $baseQuery)->where('is_archived', false);
+
+        $today = now()->toDateString();
+        $weekStart = now()->startOfWeek()->toDateString();
 
         $stats = [
-            'total_records' => (clone $baseQuery)->count(),
-            'active_records' => (clone $baseQuery)->where('is_archived', false)->count(),
-            'received_today' => (clone $baseQuery)->whereDate('date_received', now()->toDateString())->count(),
-            'monthly_registrations' => (clone $baseQuery)
-                ->whereYear('date_received', now()->year)
-                ->whereMonth('date_received', now()->month)
-                ->count(),
-            'invitations_count' => (clone $baseQuery)
-                ->where(function ($q) {
-                    $q->where('document_type', 'invitation')
-                        ->orWhereHas('category', fn ($cq) => $cq->where('slug', 'invitation'));
-                })
-                ->count(),
+            'received_today' => (clone $activeQuery)->whereDate('date_received', $today)->count(),
+            'received_week' => (clone $activeQuery)->whereDate('date_received', '>=', $weekStart)->count(),
+            'waiting_action' => (clone $activeQuery)->whereIn('status', ['draft', 'registered', 'in_review'])->count(),
+            'missing_scan' => (clone $activeQuery)->where('file_count', 0)->count(),
+            'total_active' => (clone $activeQuery)->count(),
             'archived_records' => (clone $baseQuery)->where('is_archived', true)->count(),
-            'pending_records' => (clone $baseQuery)->whereIn('status', ['draft', 'in_review'])->where('is_archived', false)->count(),
-            'ocr_failures' => (clone $baseQuery)->where('ocr_status', 'failed')->count(),
-            'ocr_completed' => (clone $baseQuery)->where('ocr_status', 'completed')->count(),
         ];
 
-        $categoryBreakdown = DocumentCategory::query()
-            ->where('is_active', true)
-            ->withCount(['documents' => fn ($q) => $q->visibleTo($user)])
-            ->orderByDesc('documents_count')
-            ->get();
-
-        $officeBreakdown = Office::query()
-            ->where('is_active', true)
-            ->withCount(['documents' => fn ($q) => $q->visibleTo($user)])
-            ->orderByDesc('documents_count')
-            ->get();
-
-        $recentDocuments = (clone $baseQuery)
-            ->with(['category', 'office', 'department', 'registrar'])
-            ->latest('registered_at')
-            ->limit(8)
-            ->get();
-
-        $upcomingInvitations = (clone $baseQuery)
+        $recentDocuments = (clone $activeQuery)
             ->with(['category', 'office'])
-            ->where('is_archived', false)
-            ->where(function ($q) {
-                $q->where('document_type', 'invitation')
-                    ->orWhereHas('category', fn ($cq) => $cq->where('slug', 'invitation'));
-            })
-            ->orderByDesc('date_received')
+            ->latest('registered_at')
+            ->limit(7)
+            ->get();
+
+        $missingScanDocuments = (clone $activeQuery)
+            ->with(['category'])
+            ->where('file_count', 0)
+            ->latest('registered_at')
             ->limit(5)
             ->get();
 
-        $recentActivity = DocumentActivityLog::query()
-            ->with(['user', 'document'])
-            ->when(! $user->isAdmin(), fn ($q) => $q->where('office_id', $user->office_id))
-            ->latest('created_at')
-            ->limit(10)
+        $categoryBreakdown = DocumentCategory::query()
+            ->where('is_active', true)
+            ->withCount(['documents' => fn ($q) => $q->visibleTo($user)->where('is_archived', false)])
+            ->orderByDesc('documents_count')
+            ->orderBy('name')
             ->get();
+
+        $accountability = $this->analytics->buildForUser($user);
 
         return view('dashboard.index', compact(
             'stats',
-            'categoryBreakdown',
-            'officeBreakdown',
             'recentDocuments',
-            'upcomingInvitations',
-            'recentActivity'
+            'missingScanDocuments',
+            'categoryBreakdown',
+            'accountability'
         ));
     }
 }

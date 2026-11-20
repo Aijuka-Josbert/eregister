@@ -45,6 +45,7 @@ class DocumentController extends Controller
             'confidentiality_level',
             'status',
             'ocr_status',
+            'scan',
             'date_from',
             'date_to',
             'include_archived',
@@ -218,6 +219,38 @@ class DocumentController extends Controller
         return redirect()
             ->route('documents.show', $document)
             ->with('success', "Document {$document->internal_reference} metadata updated and logged.");
+    }
+
+    public function updateStatus(Request $request, Document $document): RedirectResponse
+    {
+        Gate::authorize('update', $document);
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:draft,registered,in_review,actioned'],
+        ]);
+
+        $previous = $document->status;
+        if ($previous !== $validated['status']) {
+            $document->update(['status' => $validated['status']]);
+
+            $labels = [
+                'draft' => 'Draft',
+                'registered' => 'Received',
+                'in_review' => 'With officer',
+                'actioned' => 'Action taken',
+            ];
+
+            $this->auditService->log(
+                'document.status_changed',
+                "Changed status of {$document->internal_reference} from ".($labels[$previous] ?? $previous).' to '.($labels[$validated['status']] ?? $validated['status']),
+                $document,
+                ['old_status' => $previous, 'new_status' => $validated['status']],
+                'info',
+                $request->user()
+            );
+        }
+
+        return back()->with('success', 'Status updated.');
     }
 
     public function retryOcr(Request $request, Document $document): RedirectResponse

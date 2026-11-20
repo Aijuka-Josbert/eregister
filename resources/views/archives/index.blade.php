@@ -1,121 +1,105 @@
 @extends('layouts.app')
 
-@section('title', 'Digital Archive Vault — LMO Digital Records Management System')
+@section('title', "Archive — LMO Records Registry")
 
 @section('content')
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+<div class="lmo-ph">
     <div>
-        <h1 class="h4 fw-bold mb-1" style="color: var(--lmo-deep-navy);">
-            <i class="bi bi-archive me-1"></i> Digital Archive Vault
-        </h1>
-        <p class="text-muted small mb-0">
-            Non-destructive historical vault. Archived records retain 100% of their original files, OCR searchability, and audit logs.
-        </p>
+        <h1>Archive</h1>
+        <p>Documents that have been dealt with and put away. They stay searchable and can be restored.</p>
     </div>
-    <a href="{{ route('documents.index') }}" class="btn btn-sm btn-outline-primary">
-        <i class="bi bi-folder2-open me-1"></i> View Active Register
+    <a href="{{ route('documents.index') }}" class="lmo-btn">
+        <i class="bi bi-folder2"></i> Active register
     </a>
 </div>
 
-<div class="lmo-card mb-4 p-3">
-    <form action="{{ route('archives.index') }}" method="GET">
-        <div class="row g-2 align-items-end">
-            <div class="col-12 col-md-5">
-                <label class="form-label small fw-semibold mb-1">Search Archived Records &amp; OCR Text</label>
-                <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control form-control-sm" placeholder="Search archive by ref number, title, sender, or OCR content...">
-            </div>
-            <div class="col-6 col-md-3">
-                <label class="form-label small fw-semibold mb-1">Category</label>
-                <select name="category_id" class="form-select form-select-sm">
-                    <option value="">All Categories</option>
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->id }}" {{ (int) ($filters['category_id'] ?? 0) === $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-6 col-md-2">
-                <label class="form-label small fw-semibold mb-1">Office</label>
-                <select name="office_id" class="form-select form-select-sm">
-                    <option value="">All Offices</option>
-                    @foreach($offices as $off)
-                        <option value="{{ $off->id }}" {{ (int) ($filters['office_id'] ?? 0) === $off->id ? 'selected' : '' }}>{{ $off->code }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-12 col-md-2 d-flex gap-2">
-                <button type="submit" class="btn btn-sm btn-lmo-primary w-100">Search Vault</button>
-                <a href="{{ route('archives.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
-            </div>
-        </div>
-    </form>
-</div>
+<form action="{{ route('archives.index') }}" method="GET" class="lmo-filters">
+    <label>
+        Search archive
+        <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Subject, reference, sender or text">
+    </label>
+    <label>
+        Category
+        <select name="category_id" onchange="this.form.submit()">
+            <option value="">Any category</option>
+            @foreach($categories as $cat)
+                <option value="{{ $cat->id }}" {{ (int) ($filters['category_id'] ?? 0) === $cat->id ? 'selected' : '' }}>
+                    {{ $cat->name }}
+                </option>
+            @endforeach
+        </select>
+    </label>
+    <label>
+        Office
+        <select name="office_id" onchange="this.form.submit()">
+            <option value="">Any office</option>
+            @foreach($offices as $off)
+                <option value="{{ $off->id }}" {{ (int) ($filters['office_id'] ?? 0) === $off->id ? 'selected' : '' }}>
+                    {{ $off->code }} — {{ $off->name }}
+                </option>
+            @endforeach
+        </select>
+    </label>
+    <button type="submit" class="lmo-btn sm sage">Search</button>
+    @if(!empty($filters['q']) || !empty($filters['category_id']) || !empty($filters['office_id']))
+        <a href="{{ route('archives.index') }}" class="lmo-btn sm ghost">Clear</a>
+    @endif
+    <span class="count">{{ number_format($documents->total()) }} archived</span>
+</form>
 
-<div class="lmo-card">
-    <div class="lmo-card-header">
-        Archived Records ({{ $documents->total() }})
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover table-lmo mb-0">
-            <thead>
-                <tr>
-                    <th>Internal ID</th>
-                    <th>Official Ref</th>
-                    <th>Subject &amp; Organization</th>
-                    <th>Category</th>
-                    <th>Security</th>
-                    <th>Archived At</th>
-                    <th class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($documents as $doc)
-                    <tr>
-                        <td>
-                            <a href="{{ route('documents.show', $doc) }}" class="text-decoration-none">
-                                <span class="lmo-ref-badge">{{ $doc->internal_reference }}</span>
-                            </a>
-                        </td>
-                        <td>
-                            <span class="lmo-official-ref">{{ $doc->official_reference ?? 'Unnumbered' }}</span>
-                        </td>
-                        <td>
-                            <a href="{{ route('documents.show', $doc) }}" class="fw-semibold text-dark text-decoration-none d-block">
-                                {{ $doc->title }}
-                            </a>
-                            <span class="small text-muted">{{ $doc->organization }}</span>
-                        </td>
-                        <td>
-                            <span class="badge rounded-pill" style="background-color: {{ $doc->category?->color_code ?? '#245B91' }};">
-                                {{ $doc->category?->name }}
-                            </span>
-                        </td>
-                        <td>
-                            <x-confidentiality-badge :level="$doc->confidentiality_level" />
-                        </td>
-                        <td class="small text-muted">
-                            {{ $doc->archived_at?->format('d M Y H:i') }}
-                        </td>
-                        <td class="text-end">
-                            <a href="{{ route('documents.show', $doc) }}" class="btn btn-sm btn-outline-primary">
-                                Inspect / Restore
-                            </a>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
-                            <i class="bi bi-archive fs-3 d-block mb-2"></i>
-                            No records currently in the Digital Archive Vault matching your criteria.
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    @if($documents->hasPages())
-        <div class="p-3 border-top">
-            {{ $documents->links() }}
+<section class="lmo-panel">
+    @if($documents->isNotEmpty())
+        <div class="lmo-rows">
+            <div class="lmo-row head">
+                <span>Archived</span>
+                <span>Document</span>
+                <span>From / To</span>
+                <span class="cc">Category</span>
+                <span>Status</span>
+                <span></span>
+            </div>
+            @foreach($documents as $doc)
+                <a href="{{ route('documents.show', $doc) }}" class="lmo-row">
+                    <span class="d">{{ ($doc->archived_at ?? $doc->date_received)?->format('j M Y') }}</span>
+                    <span class="doc-main">
+                        <span class="s">{{ $doc->title }}</span>
+                        <span class="o">
+                            {{ $doc->organization }}
+                            @if($doc->official_reference)
+                                &middot; <span class="mono">{{ $doc->official_reference }}</span>
+                            @endif
+                        </span>
+                    </span>
+                    <span class="f">
+                        {{ $doc->sender ?: '—' }}<br>
+                        <span class="muted">to {{ $doc->recipient ?: 'Lord Mayor' }}</span>
+                    </span>
+                    <span class="cc">
+                        <span class="lmo-chip cat">{{ $doc->category?->name ?? 'General' }}</span>
+                    </span>
+                    <span class="stc">
+                        <x-status-chip :status="$doc->status" :archived="true" />
+                    </span>
+                    <span class="sc" title="{{ $doc->file_count > 0 ? $doc->file_count.' scan(s)' : 'No scan' }}">
+                        @if($doc->file_count > 0)
+                            <span class="hasscan"><i class="bi bi-file-earmark-text"></i></span>
+                        @else
+                            <span class="noscan"><i class="bi bi-exclamation-triangle"></i></span>
+                        @endif
+                    </span>
+                </a>
+            @endforeach
+        </div>
+        @if($documents->hasPages())
+            <div class="p-3 border-top" style="border-color: var(--line) !important;">
+                {{ $documents->links() }}
+            </div>
+        @endif
+    @else
+        <div class="lmo-empty">
+            <h3>The archive is empty</h3>
+            <p class="mb-0">When a document is archived it moves here while staying fully searchable.</p>
         </div>
     @endif
-</div>
+</section>
 @endsection

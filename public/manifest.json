@@ -1,13 +1,13 @@
 {
-  "name": "Lord Mayor's Office - Digital Records Management System",
-  "short_name": "LMO DRMS",
-  "description": "Official Digital Records Registration, Mobile Camera Scanning, OCR Search & Archival System for the Lord Mayor's Office",
+  "name": "Lord Mayor's Office — Records Registry",
+  "short_name": "LMO Registry",
+  "description": "Records registration, scanning, OCR search, archival vault, and accountability for the Lord Mayor's Office",
   "start_url": "./dashboard",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#142B4A",
-  "theme_color": "#142B4A",
+  "background_color": "#6A1421",
+  "theme_color": "#6A1421",
   "icons": [
     {
       "src": "images/lmo-icon.svg",

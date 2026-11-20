@@ -94,6 +94,12 @@ class SearchService
             $query->where('ocr_status', $filters['ocr_status']);
         }
 
+        if (($filters['scan'] ?? '') === 'with') {
+            $query->where('file_count', '>', 0);
+        } elseif (($filters['scan'] ?? '') === 'missing') {
+            $query->where('file_count', '=', 0);
+        }
+
         if (! empty($filters['date_from'])) {
             $query->whereDate('date_received', '>=', $filters['date_from']);
         }

@@ -5,12 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\DocumentActivityLog;
 use App\Models\Office;
 use App\Models\User;
+use App\Services\AccountabilityAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class AuditLogController extends Controller
 {
+    public function __construct(
+        protected AccountabilityAnalyticsService $analytics
+    ) {}
+
     public function index(Request $request): View
     {
         /** @var User $user */
@@ -54,23 +59,30 @@ class AuditLogController extends Controller
 
         $logs = $query->latest('created_at')->paginate(25)->withQueryString();
 
-        $distinctActions = DocumentActivityLog::select('action')->distinct()->orderBy('action')->pluck('action');
-        $users = User::orderBy('name')->get(['id', 'name', 'email']);
+        $distinctActions = DocumentActivityLog::query()
+            ->when(! $user->isAdmin(), fn ($q) => $q->where('office_id', $user->office_id))
+            ->select('action')
+            ->distinct()
+            ->orderBy('action')
+            ->pluck('action');
+
+        $users = User::query()
+            ->when(! $user->isAdmin(), fn ($q) => $q->where('office_id', $user->office_id))
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
         $offices = Office::orderBy('name')->get(['id', 'code', 'name']);
 
-        $securitySummary = [
-            'total_events' => DocumentActivityLog::count(),
-            'critical_events' => DocumentActivityLog::where('severity', 'critical')->count(),
-            'warning_events' => DocumentActivityLog::where('severity', 'warning')->count(),
-            'confidential_views' => DocumentActivityLog::where('action', 'document.viewed_confidential')->count(),
-        ];
+        $accountability = $this->analytics->buildForUser($user);
+        $securitySummary = $accountability['summary'];
 
         return view('reports.audit', compact(
             'logs',
             'distinctActions',
             'users',
             'offices',
-            'securitySummary'
+            'securitySummary',
+            'accountability'
         ));
     }
 }

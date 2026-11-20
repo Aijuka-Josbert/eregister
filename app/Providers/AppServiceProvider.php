@@ -2,10 +2,17 @@
 
 namespace App\Providers;
 
+use App\Models\Document;
+use App\Models\DocumentActivityLog;
+use App\Models\DocumentCategory;
+use App\Models\Office;
+use App\Policies\AuditLogPolicy;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
 
@@ -43,6 +50,41 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        Gate::policy(DocumentActivityLog::class, AuditLogPolicy::class);
+
+        // Share sidebar counts & grouped categories/offices for authenticated shell
+        View::composer('layouts.app', function ($view) {
+            $user = auth()->user();
+            if (! $user) {
+                return;
+            }
+
+            $baseQuery = Document::query()->visibleTo($user);
+            $activeCount = (clone $baseQuery)->where('is_archived', false)->count();
+            $archivedCount = (clone $baseQuery)->where('is_archived', true)->count();
+
+            $sidebarCategories = DocumentCategory::query()
+                ->where('is_active', true)
+                ->withCount(['documents' => fn ($q) => $q->visibleTo($user)->where('is_archived', false)])
+                ->orderBy('name')
+                ->get();
+
+            $sidebarOffices = Office::query()
+                ->where('is_active', true)
+                ->withCount(['documents' => fn ($q) => $q->visibleTo($user)->where('is_archived', false)])
+                ->orderBy('name')
+                ->get();
+
+            $view->with([
+                'navCounts' => [
+                    'active' => $activeCount,
+                    'archived' => $archivedCount,
+                ],
+                'sidebarCategories' => $sidebarCategories,
+                'sidebarOffices' => $sidebarOffices,
+            ]);
+        });
 
         // Automatically adapt root URL & HTTPS scheme when accessed via proxy, tunnel, or subdirectory (/register)
         if (! $this->app->runningInConsole() && isset($_SERVER['HTTP_HOST'])) {

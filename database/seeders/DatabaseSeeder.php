@@ -262,27 +262,27 @@ class DatabaseSeeder extends Seeder
         $categories = [
             'invitation' => DocumentCategory::updateOrCreate(
                 ['slug' => 'invitation'],
-                ['name' => 'Official Invitation', 'description' => 'State functions, diplomatic receptions, civic ceremonies, summits, and stakeholder invitations.', 'color_code' => '#C5A15B', 'retention_years' => 3, 'is_active' => true]
+                ['name' => 'Official Invitation', 'description' => 'State functions, diplomatic receptions, civic ceremonies, summits, and stakeholder invitations.', 'color_code' => '#8A6D3B', 'retention_years' => 3, 'is_active' => true]
             ),
             'correspondence' => DocumentCategory::updateOrCreate(
                 ['slug' => 'inter-ministerial-correspondence'],
-                ['name' => 'Inter-Ministerial & Government Correspondence', 'description' => 'Official letters from Ministries, Departments, and Agencies (MDAs).', 'color_code' => '#245B91', 'retention_years' => 10, 'is_active' => true]
+                ['name' => 'Inter-Ministerial & Government Correspondence', 'description' => 'Official letters from Ministries, Departments, and Agencies (MDAs).', 'color_code' => '#3E5A43', 'retention_years' => 10, 'is_active' => true]
             ),
             'legal' => DocumentCategory::updateOrCreate(
                 ['slug' => 'legal-and-statutory'],
-                ['name' => 'Legal Notice & Statutory Matter', 'description' => 'Legal opinions, court pleadings, contracts, and statutory notices.', 'color_code' => '#C74646', 'retention_years' => 15, 'is_active' => true]
+                ['name' => 'Legal Notice & Statutory Matter', 'description' => 'Legal opinions, court pleadings, contracts, and statutory notices.', 'color_code' => '#8E1C2A', 'retention_years' => 15, 'is_active' => true]
             ),
             'petition' => DocumentCategory::updateOrCreate(
                 ['slug' => 'citizen-petition'],
-                ['name' => 'Citizen & Community Petition', 'description' => 'Public petitions, market vendor appeals, and community grievances.', 'color_code' => '#21865B', 'retention_years' => 7, 'is_active' => true]
+                ['name' => 'Citizen & Community Petition', 'description' => 'Public petitions, market vendor appeals, and community grievances.', 'color_code' => '#7F9B7D', 'retention_years' => 7, 'is_active' => true]
             ),
             'finance' => DocumentCategory::updateOrCreate(
                 ['slug' => 'budget-and-finance'],
-                ['name' => 'Budget, Audit & Financial Report', 'description' => 'Municipal budget allocations, audit queries, and financial statements.', 'color_code' => '#142B4A', 'retention_years' => 10, 'is_active' => true]
+                ['name' => 'Budget, Audit & Financial Report', 'description' => 'Municipal budget allocations, audit queries, and financial statements.', 'color_code' => '#6A1421', 'retention_years' => 10, 'is_active' => true]
             ),
             'memo' => DocumentCategory::updateOrCreate(
                 ['slug' => 'internal-memorandum'],
-                ['name' => 'Internal Office Memorandum', 'description' => 'Internal directives, circulars, and administrative memos.', 'color_code' => '#3283B8', 'retention_years' => 5, 'is_active' => true]
+                ['name' => 'Internal Office Memorandum', 'description' => 'Internal directives, circulars, and administrative memos.', 'color_code' => '#5D6659', 'retention_years' => 5, 'is_active' => true]
             ),
         ];
 

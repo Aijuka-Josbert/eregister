@@ -58,3 +58,6 @@ php artisan serve --host=0.0.0.0 --port=8000
 - [System Administrator Manual](docs/ADMIN_GUIDE.md)
 - [Management Demo Script & Handover Guide](docs/PROJECT_HANDOVER.md)
 - [Project Progress Log](PROJECT_PROGRESS.md)
+
+
+# requirement download ext-xml extenxion when wifi is back 

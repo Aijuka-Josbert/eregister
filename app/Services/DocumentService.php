@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\ProcessDocumentOcrJob;
 use App\Models\Document;
+use App\Models\DocumentCategory;
 use App\Models\DocumentTag;
 use App\Models\Office;
 use App\Models\User;
@@ -102,6 +103,9 @@ class DocumentService
         return DB::transaction(function () use ($data, $registrar, $uploadedFiles, $cameraCapturesBase64, $processOcrImmediately) {
             $officeId = (int) ($data['office_id'] ?? $registrar->office_id ?? Office::first()?->id);
             $internalRef = $this->generateInternalReference($officeId);
+            $inferredType = ! empty($data['document_type'])
+                ? $data['document_type']
+                : $this->inferDocumentType((int) $data['category_id']);
 
             $document = Document::create([
                 'uuid' => (string) Str::uuid(),
@@ -114,16 +118,16 @@ class DocumentService
                 'organization' => trim((string) $data['organization']),
                 'sender' => $data['sender'] ?? null,
                 'recipient' => $data['recipient'] ?? 'The Right Honourable Lord Mayor',
-                'direction' => $data['direction'] ?? 'incoming',
-                'document_type' => $data['document_type'] ?? 'letter',
+                'direction' => ! empty($data['direction']) ? $data['direction'] : 'incoming',
+                'document_type' => $inferredType,
                 'event_date' => $data['event_date'] ?? null,
                 'date_issued' => $data['date_issued'] ?? null,
                 'date_received' => $data['date_received'] ?? now()->toDateString(),
                 'category_id' => (int) $data['category_id'],
                 'office_id' => $officeId,
                 'department_id' => ! empty($data['department_id']) ? (int) $data['department_id'] : $registrar->department_id,
-                'confidentiality_level' => $data['confidentiality_level'] ?? 'internal',
-                'status' => $data['status'] ?? 'registered',
+                'confidentiality_level' => ! empty($data['confidentiality_level']) ? $data['confidentiality_level'] : 'internal',
+                'status' => ! empty($data['status']) ? $data['status'] : 'registered',
                 'ocr_status' => 'pending',
                 'registered_by' => $registrar->id,
                 'registered_at' => now(),
@@ -319,5 +323,28 @@ class DocumentService
         }
 
         $document->tags()->sync(array_unique($tagIds));
+    }
+
+    /**
+     * Infer a sensible document_type from the chosen category when not explicitly specified.
+     */
+    protected function inferDocumentType(int $categoryId): string
+    {
+        $category = DocumentCategory::find($categoryId);
+        if (! $category) {
+            return 'letter';
+        }
+
+        $haystack = strtolower($category->slug.' '.$category->name);
+
+        return match (true) {
+            str_contains($haystack, 'invit') => 'invitation',
+            str_contains($haystack, 'legal') || str_contains($haystack, 'contract') => 'legal_notice',
+            str_contains($haystack, 'petition') || str_contains($haystack, 'complaint') => 'petition',
+            str_contains($haystack, 'memo') => 'memo',
+            str_contains($haystack, 'circular') => 'circular',
+            str_contains($haystack, 'report') || str_contains($haystack, 'finance') || str_contains($haystack, 'budget') => 'report',
+            default => 'letter',
+        };
     }
 }
